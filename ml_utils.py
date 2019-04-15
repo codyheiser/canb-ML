@@ -8,6 +8,9 @@ Utility functions for testing ML algorithms
 # basic matrix/dataframe manipulation
 import numpy as np
 import pandas as pd
+
+# sklearn tools
+from sklearn.model_selection import KFold
 from sklearn import metrics
 
 # plotting tools
@@ -64,3 +67,26 @@ def validator(splits, classifier):
         score = classifier.score(splits['test']['data'][split], splits['test']['labels'][split])
 
         print('\nSplit {}: {}\n{}'.format(split,score,conf_matrix))
+
+
+def plot_cm(cm):
+    '''plot confusion matrix using seaborn for pretty output'''
+    plt.figure(figsize=(3,3))
+    sns.heatmap(cm, annot=True, linewidths=.5, square = True, cmap = 'Blues_r', cbar=False, annot_kws={'fontsize':18})
+    plt.ylabel('Actual Label', fontsize=14)
+    plt.xlabel('Predicted label', fontsize=14)
+    plt.tick_params(axis='both', which='major', labelsize=14)
+    score = cm.diagonal().sum()/cm.sum()
+    plt.title('Accuracy: {0}'.format(np.round(score,3)), size = 14)
+    plt.show()
+    plt.close()
+
+
+def cm_metrics(cm):
+    '''calculate common metrics based on confusion matrix (e.g. accuracy, precision, sensitivity, specificity)'''
+    assert cm.shape == (2,2), "Confusion matrix must be 2 x 2."
+    acc = cm.diagonal().sum()/cm.sum()
+    prec = cm[1,1]/cm[:,1].sum()
+    sens = cm[1,1]/cm[1,:].sum()
+    spec = cm[0,0]/cm[0,:].sum()
+    return acc, prec, sens, spec
