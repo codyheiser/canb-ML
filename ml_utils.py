@@ -11,6 +11,7 @@ import pandas as pd
 from scipy import interp
 
 # sklearn tools
+from sklearn.preprocessing import normalize
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import roc_curve, auc, confusion_matrix
 
@@ -28,15 +29,38 @@ def numerize(df, col, drop=True):
     '''
     temp = df.copy(deep=True) # copy df so you don't affect it
 
-    for cat in temp[col][temp[col].notnull()].unique():
+    for cat in temp[col].unique():
         # for each categorical value, create a new column with binary values for T/F
-        temp[col+'_'+cat] = (temp[col]==cat)*1
+        if str(cat)=='nan': # if NaN is category, use .isnull() function
+            temp[col+'_'+str(cat)] = (temp[col].isnull())*1
+
+        else: # otherwise, search for values
+            temp[col+'_'+str(cat)] = (temp[col]==cat)*1
 
     if drop:
         return temp.drop(col, axis=1)
 
     else:
         return temp
+
+
+def impute_with_classifier(df, col, clf):
+    '''impute NA values in column (col) of dataframe (df) using classifer (clf)'''
+    # get labels of training set
+    fit_labels = df.loc[-df[col].isnull(), col]
+    # drop column from training set
+    df_trainer = df.drop(col, axis=1)
+    # get subsets to train and predict on
+    fit = df_trainer[-df[col].isnull()]
+    predict = df_trainer[df[col].isnull()]
+    # normalize each column to fractional abundance
+    fit_norm = normalize(fit, axis=1, norm='l1')
+    predict_norm = normalize(predict, axis=1, norm='l1')
+
+    clf.fit(fit_norm, fit_labels)
+    print('Imputing column "{}" with accuracy {}'.format(col, np.round(clf.score(fit_norm, fit_labels),3)))
+
+    return clf.predict(predict_norm)
 
 
 def kfold_split(data, labels, n_splits, seed=None, shuffle=True):
@@ -98,28 +122,41 @@ def cm_metrics(cm, pretty_print=False):
     return acc, prec, sens, spec
 
 
-def roc_kfold(clf, X, y, k):
+def roc_kfold(clf, X, y, k, seed=None):
     '''Run classifier with cross-validation and plot ROC curves'''
-    cv = StratifiedKFold(n_splits=k)
-
     tprs = []
     aucs = []
+    cm = np.array([[0,0],[0,0]])
+    out = {'acc':[], 'prec':[], 'sens':[], 'spec':[]}
     mean_fpr = np.linspace(0, 1, 100)
 
     plt.figure(figsize=(7,7))
+    plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',label='Chance', alpha=.8)
+
     i = 0
+    cv = StratifiedKFold(n_splits=k, shuffle=True, random_state=seed)
     for train, test in cv.split(X, y):
-        probas_ = clf.fit(X[train], y[train]).predict_proba(X[test])
+        clf.fit(X[train], y[train])
+        prediction = clf.predict(X[test])
+        conf_matrix = confusion_matrix(y[test], prediction)
+        # print metrics to the console
+        acc, prec, sens, spec = cm_metrics(conf_matrix, pretty_print=False)
+        # append to outputs
+        out['acc'].append(acc)
+        out['prec'].append(prec)
+        out['sens'].append(sens)
+        out['spec'].append(spec)
+        cm = cm + conf_matrix
+
+        probas_ = clf.predict_proba(X[test])
         # Compute ROC curve and area the curve
         fpr, tpr, thresholds = roc_curve(y[test], probas_[:, 1])
         tprs.append(interp(mean_fpr, fpr, tpr))
         tprs[-1][0] = 0.0
         roc_auc = auc(fpr, tpr)
         aucs.append(roc_auc)
-        plt.plot(fpr, tpr, lw=1, alpha=0.3,label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc))
+        plt.plot(fpr, tpr, lw=1, alpha=0.5,label='ROC fold %d (AUC = %0.2f)' % (i, roc_auc))
         i += 1
-
-    plt.plot([0, 1], [0, 1], linestyle='--', lw=2, color='r',label='Chance', alpha=.8)
 
     mean_tpr = np.mean(tprs, axis=0)
     mean_tpr[-1] = 1.0
@@ -140,3 +177,6 @@ def roc_kfold(clf, X, y, k):
     plt.legend(loc="lower right")
     plt.show()
     plt.close()
+
+    plot_cm(cm)
+    return out
