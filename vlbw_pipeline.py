@@ -42,7 +42,7 @@ if __name__ == '__main__':
         vlbw.loc[vlbw[col]=='absent', col] = 0
         vlbw.loc[vlbw[col]=='possible', col] = 1
         vlbw.loc[vlbw[col]=='definite', col] = 2
-        vlbw.loc[:,col] = vlbw[col].astype('float64') # ensure numeric datatype
+        vlbw.loc[:,col] = vlbw[col].astype('float') # ensure numeric datatype
 
     # perform numerization on remaining string columns
     for feature, datatype in zip(vlbw.dtypes.index, vlbw.dtypes):
@@ -60,8 +60,7 @@ if __name__ == '__main__':
     # IMPUTATION #
 
     # insert median lol for vaginal births into missing values
-    lol_val = np.nanmedian(vlbw[vlbw.delivery_vaginal==1]['lol'])
-    vlbw.loc[vlbw.lol.isnull(), 'lol'] = lol_val
+    vlbw.loc[vlbw.lol.isnull(), 'lol'] = np.nanmedian(vlbw[vlbw.delivery_vaginal==1]['lol'])
 
     # replace missing values with the median of the other values
     vlbw.fillna(value={'lowph':np.nanmedian(vlbw.lowph),'pltct':np.nanmedian(vlbw.pltct),'gest':np.nanmedian(vlbw.gest),
