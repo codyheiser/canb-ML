@@ -11,7 +11,7 @@ import argparse
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process and build classifier for live birth data. CANB8347 machine learning project.')
+    parser = argparse.ArgumentParser(description='Process and impute live birth data for training machine learning classifier. CANB8347 machine learning project.')
     parser.add_argument('file', type=str, help='path to input dataframe as .csv')
     parser.add_argument('-o','--outloc', type=str, default='out.csv', help='path to output .csv file')
     args = parser.parse_args()
