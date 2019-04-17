@@ -11,3 +11,21 @@ Before starting, set up Python environment:
 ```
 pip install -r requirements.text
 ```
+---
+Final imputation and training of algorithms described in [`training_presentation.ipynb`](training_presentation.ipynb), and implemented as command-line scripts [`vlbw_pipeline.py`](vlbw_pipeline.py), [`vlbw_test_pipeline.py`](vlbw_test_pipeline.py), and [`training_pipeline.py`](training_pipeline.py).  
+
+Example workflow as follows:
+```
+# preprocess and impute training data and save as new file
+python vlbw_pipeline.py data/vlbw_train.csv -o data/vlbw_train_imputed.csv
+
+# preprocess and impute testing data and save as new file
+python vlbw_test_pipeline.py data/vlbw_test.csv -o data/vlbw_test_imputed.csv
+
+# train Random Forest Classifier with optimal parameters on filtered and imputed training data,
+# predict labels on filtered and imputed testing data, and print out resulting metrics
+python training_pipeline.py data/vlbw_train_imputed.csv data/vlbw_test_imputed.csv -o data/vlbw_test_predicted.csv
+```
+
+Final performance on testing dataset:  
+![alt text](data/final_metrics.png)
