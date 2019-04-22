@@ -97,12 +97,12 @@ def validator(splits, classifier):
 def plot_cm(cm):
     '''plot confusion matrix using seaborn for pretty output'''
     plt.figure(figsize=(3,3))
-    sns.heatmap(cm, annot=True, linewidths=.5, square = True, cmap = 'Blues_r', cbar=False, annot_kws={'fontsize':18})
+    sns.heatmap(cm, annot=True, fmt='d', linewidths=.5, square = True, cmap = 'Blues_r', cbar=False, annot_kws={'fontsize':18})
     plt.ylabel('Actual Label', fontsize=14)
     plt.xlabel('Predicted label', fontsize=14)
     plt.tick_params(axis='both', which='major', labelsize=14)
     score = cm.diagonal().sum()/cm.sum()
-    plt.title('Accuracy: {0}'.format(np.round(score,3)), size = 14)
+    plt.title('Accuracy: {0} %'.format(np.round(score*100,2)), size = 14)
     plt.show()
     plt.close()
 
